@@ -8,8 +8,7 @@ from confluent_kafka import Producer
 
 fake = Faker()
 
-# ── Confluent Cloud config ─────────────────────────────────────
-BOOTSTRAP_SERVER = "your-confluent-bootstrap-server:9092"   
+BOOTSTRAP_SERVER = "your-confluent-bootstrap-server:9092"
 API_KEY          = "your-cluster-scoped-api-key"
 API_SECRET       = "your-cluster-api-secret"
 TOPIC            = "bank_transactions"
@@ -24,14 +23,12 @@ conf = {
 
 producer = Producer(conf)
 
-# ── Static reference data ──────────────────────────────────────
-COUNTRIES  = ["US", "GB", "DE", "FR", "IN", "CA", "AU", "JP", "BR", "MX"]
-STATUSES   = ["success", "failed", "pending", "flagged"]
-MERCHANTS  = ["Amazon", "Walmart", "Target", "Best Buy", "Starbucks",
-              "McDonald's", "Apple Store", "Netflix", "Uber", "Airbnb"]
-ACCOUNT_IDS = [f"ACC{str(i).zfill(6)}" for i in range(1, 201)]  # 200 fake accounts
+COUNTRIES   = ["US", "GB", "DE", "FR", "IN", "CA", "AU", "JP", "BR", "MX"]
+STATUSES    = ["success", "failed", "pending", "flagged"]
+MERCHANTS   = ["Amazon", "Walmart", "Target", "Best Buy", "Starbucks",
+                "McDonald's", "Apple Store", "Netflix", "Uber", "Airbnb"]
+ACCOUNT_IDS = [f"ACC{str(i).zfill(6)}" for i in range(1, 201)]
 
-# ── Event generators ───────────────────────────────────────────
 def purchase_event():
     return {
         "event_id":   str(uuid.uuid4()),
@@ -63,12 +60,11 @@ def atm_withdrawal():
     }
 
 def online_transfer():
-    amount = round(random.uniform(100.0, 15000.0), 2)
     return {
         "event_id":   str(uuid.uuid4()),
         "account_id": random.choice(ACCOUNT_IDS),
         "event_type": "online_transfer",
-        "amount":     amount,
+        "amount":     round(random.uniform(100.0, 15000.0), 2),
         "merchant":   f"TRANSFER-TO-{fake.bothify('ACC######')}",
         "country":    random.choice(COUNTRIES),
         "city":       fake.city(),
@@ -116,12 +112,10 @@ EVENT_GENERATORS = [
     account_update,
 ]
 
-# ── Delivery callback ──────────────────────────────────────────
 def delivery_report(err, msg):
     if err:
-        print(f"  ✗ Delivery failed: {err}")
+        print(f"Delivery failed: {err}")
 
-# ── Main loop ──────────────────────────────────────────────────
 def main():
     print("=" * 55)
     print("  Fraud Detection — Kafka Producer")
@@ -135,7 +129,6 @@ def main():
 
     try:
         while True:
-            # Pick a random event generator and produce
             event = random.choice(EVENT_GENERATORS)()
             producer.produce(
                 topic=TOPIC,
@@ -146,14 +139,12 @@ def main():
             producer.poll(0)
             count += 1
 
-            # Print progress every 500 events
             if count % 500 == 0:
                 elapsed = time.time() - start
                 rate    = count / elapsed
                 print(f"  [{datetime.now().strftime('%H:%M:%S')}]  "
                       f"Events sent: {count:,}  |  Rate: {rate:.0f}/sec")
 
-            # Throttle to ~500 events/sec
             time.sleep(0.002)
 
     except KeyboardInterrupt:
